@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chandan Diaries</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800 px-4 md:px-8 py-3 flex items-center justify-between shadow-2xl">
+    
+    <div class="flex flex-col gap-0.5 max-w-[35%] md:max-w-[30%]">
+      <div id="location-box" class="flex items-center gap-1.5 text-xs text-sky-400 truncate bg-sky-950/50 px-2.5 py-1 rounded-lg border border-sky-800/40 w-fit">
+        <i class="fa-solid fa-location-dot animate-bounce text-sky-400 text-[11px]"></i>
+        <span id="location-text" class="truncate font-semibold text-[11px] md:text-xs">Detecting location...</span>
+      </div>
+      <div class="text-[10px] md:text-xs text-slate-400 pl-1 font-mono flex items-center gap-2">
+        <span id="live-date">--/--/----</span>
+        <span class="text-slate-600">•</span>
+        <span id="live-time" class="text-sky-300 font-bold">--:--:--</span>
+      </div>
+    </div>
+
+    <div class="text-center cursor-pointer" onclick="showSection('routine')">
+      <h1 class="text-lg md:text-3xl font-black tracking-wider uppercase bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent drop-shadow-sm">
+        Chandan Diaries
+      </h1>
+    </div>
+
+    <div class="relative">
+      <button id="menu-btn" onclick="toggleMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 text-lg border border-slate-700 active:scale-95 transition shadow-lg">
+        <i id="menu-icon" class="fa-solid fa-bars"></i>
+      </button>
+
+      <div id="dropdown-menu" class="hidden absolute right-0 mt-3 w-64 glass-panel bg-slate-900/95 rounded-2xl shadow-2xl border border-slate-700/70 p-2 z-50 transform origin-top-right transition-all">
+        <div class="p-2 border-b border-slate-800/80 mb-1 flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Navigation</span>
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+        </div>
+        <button onclick="navigate('routine')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-sm font-medium transition text-left text-slate-200 hover:text-sky-400">
+          <i class="fa-solid fa-calendar-check text-sky-400 w-5 text-center"></i> Daily Routine
+        </button>
+        <button onclick="navigate('academics')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-sm font-medium transition text-left text-slate-200 hover:text-sky-400">
+          <i class="fa-solid fa-graduation-cap text-indigo-400 w-5 text-center"></i> Academics
+        </button>
+        <button onclick="navigate('files')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-sm font-medium transition text-left text-slate-200 hover:text-sky-400">
+          <i class="fa-solid fa-folder-open text-amber-400 w-5 text-center"></i> Files & Drives
+        </button>
+        <button onclick="navigate('photos')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-sm font-medium transition text-left text-slate-200 hover:text-sky-400">
+          <i class="fa-solid fa-camera-retro text-rose-400 w-5 text-center"></i> Photos Studio
+        </button>
+        <button onclick="navigate('goals')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-sm font-medium transition text-left text-slate-200 hover:text-sky-400">
+          <i class="fa-solid fa-bullseye text-emerald-400 w-5 text-center"></i> Goal
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8">
+
+    <section id="sec-routine" class="space-y-6">
+      <div class="relative overflow-hidden rounded-2xl glass-panel p-6 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+        <div class="space-y-2 text-center md:text-left z-10">
+          <span id="current-day-badge" class="px-3 py-1 bg-sky-500/20 text-sky-300 border border-sky-500/40 rounded-full text-xs font-semibold uppercase tracking-wider">Loading Day...</span>
+          <h2 class="text-2xl md:text-3xl font-bold">Daily Routine Tracker</h2>
+          <p class="text-slate-400 text-xs md:text-sm">Manage tasks for specific days and time slots. Resets every morning with weekly progress analytics!</p>
+        </div>
+        <img src="https://media.giphy.com/media/LmN8OYiY4m0X85K0Zz/giphy.gif" alt="Productivity" class="w-24 h-24 md:w-32 md:h-32 object-contain rounded-xl opacity-90 drop-shadow-md" />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase font-semibold text-slate-400">Selected Day Completion</p>
+            <h3 id="today-percentage" class="text-3xl font-black text-sky-400 mt-1">0%</h3>
+            <p id="today-count" class="text-xs text-slate-500 mt-0.5">0 of 0 completed</p>
+          </div>
+          <div class="w-16 h-16 rounded-full bg-slate-900 border-4 border-sky-500 flex items-center justify-center font-bold text-sky-300 text-sm shadow-inner">
+            <i class="fa-solid fa-chart-pie text-xl"></i>
+          </div>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase font-semibold text-slate-400">Weekly Consistency</p>
+            <h3 id="week-percentage" class="text-3xl font-black text-indigo-400 mt-1">0%</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Past 7 Days Average</p>
+          </div>
+          <div class="w-16 h-16 rounded-full bg-slate-900 border-4 border-indigo-500 flex items-center justify-center font-bold text-indigo-300 text-sm shadow-inner">
+            <i class="fa-solid fa-calendar-week text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 overflow-x-auto pb-1">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Filter:</span>
+        <button onclick="filterDay('All')" id="day-btn-All" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-slate-950 transition">All Tasks</button>
+        <button onclick="filterDay('Sunday')" id="day-btn-Sunday" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition">Sun</button>
+        <button onclick="filterDay('Monday')" id="day-btn-Monday" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition">Mon</button>
+        <button onclick="filterDay('Tuesday')" id="day-btn-Tuesday" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition">Tue</button>
+        <button onclick="filterDay('Wednesday')" id="day-btn-Wednesday" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition">Wed</button>
+        <button onclick="filterDay('Thursday')" id="day-btn-Thursday" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition">Thu</button>
+        <button onclick="filterDay('Friday')" id="day-btn-Friday" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition">Fri</button>
+        <button onclick="filterDay('Saturday')" id="day-btn-Saturday" class="day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition">Sat</button>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800 grid grid-cols-1 sm:grid-cols-12 gap-3">
+        <input type="text" id="new-routine-input" placeholder="Activity (e.g. DSA Revision / Gym Workout)" class="sm:col-span-5 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sky-500 text-slate-200" />
+        
+        <select id="routine-day-select" class="sm:col-span-3 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-sky-500">
+          <option value="Everyday">Everyday</option>
+          <option value="Sunday">Sunday</option>
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+        </select>
+
+        <input type="text" id="routine-time-input" placeholder="Time (e.g. 10 AM - 11 AM)" class="sm:col-span-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-sky-500 text-slate-200" />
+
+        <button onclick="addRoutineItem()" class="sm:col-span-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-sky-500/20 active:scale-95">
+          <i class="fa-solid fa-plus"></i> Add
+        </button>
+      </div>
+
+      <div id="routine-list" class="space-y-3"></div>
+    </section>
+
+    <section id="sec-academics" class="space-y-6 hidden">
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold">Academic Qualifications</h2>
+          <p class="text-slate-400 text-xs md:text-sm mt-1">Verified academic journey and performance metrics.</p>
+        </div>
+        <img src="https://media.giphy.com/media/3o7btQ8jDTPGDpgc6I/giphy.gif" alt="Education" class="w-20 h-20 md:w-28 md:h-28 object-contain rounded-xl opacity-90" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800/90 relative overflow-hidden group hover:border-sky-500/50 transition">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-school"></i></div>
+            <h3 class="text-lg font-bold text-sky-300">Matriculation</h3>
+          </div>
+          <div class="space-y-2 text-sm text-slate-300">
+            <p><span class="text-slate-500 font-semibold">School Name:</span> Jajpur Zilla High School, Jajpur</p>
+            <p><span class="text-slate-500 font-semibold">Date of Passing:</span> 06th May, 2015</p>
+            <p><span class="text-slate-500 font-semibold">Mark Secured:</span> 471</p>
+            <div class="mt-3 inline-block px-3 py-1 rounded-lg bg-sky-950 text-sky-300 font-bold border border-sky-800 text-xs">
+              Percentage of Mark Secured: 78.84%
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800/90 relative overflow-hidden group hover:border-indigo-500/50 transition">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-building-columns"></i></div>
+            <h3 class="text-lg font-bold text-indigo-300">Intermediate</h3>
+          </div>
+          <div class="space-y-2 text-sm text-slate-300">
+            <p><span class="text-slate-500 font-semibold">College Name:</span> Vinayak College of Science & Commerce, Bhadrak</p>
+            <p><span class="text-slate-500 font-semibold">Stream:</span> Science</p>
+            <p><span class="text-slate-500 font-semibold">Date of Passing:</span> 12th May, 2015</p>
+            <p><span class="text-slate-500 font-semibold">Mark Secured:</span> 473</p>
+            <div class="mt-3 inline-block px-3 py-1 rounded-lg bg-indigo-950 text-indigo-300 font-bold border border-indigo-800 text-xs">
+              Percentage of Mark Secured: 79.17%
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800/90 relative overflow-hidden group hover:border-purple-500/50 transition">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-user-graduate"></i></div>
+            <h3 class="text-lg font-bold text-purple-300">Graduation</h3>
+          </div>
+          <div class="space-y-2 text-sm text-slate-300">
+            <p><span class="text-slate-500 font-semibold">College Name:</span> Government College of Engineering, Keonjhar</p>
+            <p><span class="text-slate-500 font-semibold">Course:</span> Bachelor of Technology (B. Tech. Degree)</p>
+            <p><span class="text-slate-500 font-semibold">Branch:</span> Mechanical Engineering</p>
+            <p><span class="text-slate-500 font-semibold">Date of Passing:</span> 28th July, 2022</p>
+            <p><span class="text-slate-500 font-semibold">CGPA Secured:</span> 9.03</p>
+            <div class="mt-3 inline-block px-3 py-1 rounded-lg bg-purple-950 text-purple-300 font-bold border border-purple-800 text-xs">
+              Percentage of Mark Secured: 85.30%
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800/90 relative overflow-hidden group hover:border-emerald-500/50 transition">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-award"></i></div>
+            <h3 class="text-lg font-bold text-emerald-300">Post-Graduation</h3>
+          </div>
+          <div class="space-y-2 text-sm text-slate-300">
+            <p><span class="text-slate-500 font-semibold">College Name:</span> Institute of Management & Information Technology, Cuttack</p>
+            <p><span class="text-slate-500 font-semibold">Course:</span> Master of Business Administration (MBA)</p>
+            <p><span class="text-slate-500 font-semibold">Specialization:</span> Finance & Operation Management</p>
+            <p><span class="text-slate-500 font-semibold">Date of Passing:</span> 02nd June, 2025</p>
+            <p><span class="text-slate-500 font-semibold">CGPA Secured:</span> 8.3</p>
+            <div class="mt-3 inline-block px-3 py-1 rounded-lg bg-emerald-950 text-emerald-300 font-bold border border-emerald-800 text-xs">
+              Percentage of Mark Secured: 78.00%
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="sec-files" class="space-y-6 hidden">
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold">Document & Cloud Vault</h2>
+          <p class="text-slate-400 text-xs md:text-sm mt-1">Direct upload and storage from any mobile or laptop.</p>
+        </div>
+        <img src="https://media.giphy.com/media/26tn3334mVoVClE4Y/giphy.gif" alt="Folders" class="w-20 h-20 md:w-28 md:h-28 object-contain rounded-xl opacity-90" />
+      </div>
+
+      <div class="flex flex-wrap gap-2 p-1.5 bg-slate-900/90 rounded-2xl border border-slate-800">
+        <button onclick="switchDriveTab('my-drive')" id="tab-my-drive" class="flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-bold bg-sky-500 text-slate-950 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-user"></i> My Drive
+        </button>
+        <button onclick="switchDriveTab('father-drive')" id="tab-father-drive" class="flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-400 hover:bg-slate-800 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-person"></i> Father's Drive
+        </button>
+        <button onclick="switchDriveTab('mother-drive')" id="tab-mother-drive" class="flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-400 hover:bg-slate-800 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-person-dress"></i> Mother's Drive
+        </button>
+      </div>
+
+      <div id="drive-my-drive" class="space-y-6">
+        <div class="flex gap-2">
+          <button onclick="switchMySubCategory('cert')" id="sub-cert" class="px-4 py-2 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">📜 Certificates</button>
+          <button onclick="switchMySubCategory('mail')" id="sub-mail" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200">📧 Mail IDs</button>
+          <button onclick="switchMySubCategory('other')" id="sub-other" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200">📁 Other Documents</button>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+          <label class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Add Document to My Drive</label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="doc-title-input" placeholder="Title (e.g., Degree Certificate)" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-sky-500" />
+            <input type="file" id="doc-file-input" class="text-xs text-slate-400 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-slate-800 file:text-sky-400 hover:file:bg-slate-700 cursor-pointer" />
+            <button onclick="uploadDocument('my-drive')" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+            </button>
+          </div>
+        </div>
+
+        <div id="my-drive-file-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+      </div>
+
+      <div id="drive-father-drive" class="space-y-6 hidden">
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+          <label class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Add to Father's Drive</label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="father-doc-title" placeholder="Document Description" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-sky-500" />
+            <input type="file" id="father-doc-file" class="text-xs text-slate-400 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-slate-800 file:text-sky-400 hover:file:bg-slate-700 cursor-pointer" />
+            <button onclick="uploadFamilyDoc('father-drive')" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition">
+              Upload
+            </button>
+          </div>
+        </div>
+        <div id="father-file-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+      </div>
+
+      <div id="drive-mother-drive" class="space-y-6 hidden">
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+          <label class="block text-xs font-bold uppercase text-slate-400 tracking-wider">Add to Mother's Drive</label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="mother-doc-title" placeholder="Document Description" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-sky-500" />
+            <input type="file" id="mother-doc-file" class="text-xs text-slate-400 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-slate-800 file:text-sky-400 hover:file:bg-slate-700 cursor-pointer" />
+            <button onclick="uploadFamilyDoc('mother-drive')" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition">
+              Upload
+            </button>
+          </div>
+        </div>
+        <div id="mother-file-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <section id="sec-photos" class="space-y-6 hidden">
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold">Photo & Signature Studio</h2>
+          <p class="text-slate-400 text-xs md:text-sm mt-1">Upload pictures directly. Adjust dimensions, change shapes, and export in custom formats.</p>
+        </div>
+        <img src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" alt="Camera" class="w-20 h-20 md:w-28 md:h-28 object-contain rounded-xl opacity-90" />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-5 glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">1. Select Photo From Device</label>
+            <input type="file" id="photo-studio-file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-slate-800 file:text-sky-400 hover:file:bg-slate-700 cursor-pointer" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">2. Unit Mode</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="photo-unit-px" onclick="setPhotoUnit('px')" class="py-2 text-xs font-bold rounded-xl bg-sky-500 text-slate-950">Pixels (px)</button>
+              <button id="photo-unit-cm" onclick="setPhotoUnit('cm')" class="py-2 text-xs font-bold rounded-xl bg-slate-800 text-slate-300">Centimeters (cm)</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label id="photo-lbl-w" class="block text-xs text-slate-400 mb-1">Width (px)</label>
+              <input type="number" id="photo-w" value="350" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm outline-none focus:border-sky-500" />
+            </div>
+            <div>
+              <label id="photo-lbl-h" class="block text-xs text-slate-400 mb-1">Height (px)</label>
+              <input type="number" id="photo-h" value="450" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm outline-none focus:border-sky-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Shape</label>
+              <select id="photo-shape" onchange="renderPhotoPreview()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs outline-none focus:border-sky-500">
+                <option value="rect">Rectangle / Standard</option>
+                <option value="circle">Circular Avatar</option>
+                <option value="rounded">Rounded Corners</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Export Format</label>
+              <select id="photo-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs outline-none focus:border-sky-500">
+                <option value="jpeg">JPG (Portal Ready)</option>
+                <option value="png">PNG (Transparent)</option>
+                <option value="pdf">PDF Document</option>
+              </select>
+            </div>
+          </div>
+
+          <button onclick="downloadCustomPhoto()" class="w-full py-3.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-sky-500/20 active:scale-95 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i> Generate & Download
+          </button>
+        </div>
+
+        <div class="lg:col-span-7 glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col items-center justify-center min-h-[320px]">
+          <span class="text-xs uppercase text-slate-500 font-bold tracking-wider mb-4">Processing Canvas Preview</span>
+          <div class="w-full flex items-center justify-center p-2 overflow-auto">
+            <canvas id="photo-canvas" class="max-w-full max-h-[300px] rounded-lg border border-slate-800 bg-slate-950/60 shadow-2xl"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-goals" class="space-y-6 hidden">
+      <div class="glass-panel p-12 rounded-3xl border border-slate-800 text-center flex flex-col items-center justify-center space-y-4 min-h-[400px]">
+        <img src="https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif" alt="Target Goal" class="w-32 h-32 object-contain rounded-2xl opacity-80" />
+        <h2 class="text-2xl md:text-3xl font-bold text-slate-200">Future Goals & Targets</h2>
+        <p class="text-slate-500 text-sm max-w-md">This section is ready for your upcoming personal milestones and career goals.</p>
+        <span class="px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400 text-xs font-mono">Status: Initialized</span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="mt-auto border-t border-slate-900 py-6 text-center text-xs text-slate-600 glass-panel">
+    <p>© 2026 Chandan Diaries • Personal Vault & Academic Hub</p>
+  </footer>
+
+  <script>
+    /* ---------------- 1. LIVE TIME, DATE & LOCATION ---------------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      startLiveClock();
+      initLocation();
+      initRoutineTracker();
+      renderDriveFiles();
+      setPhotoUnit('px');
+    });
+
+    function startLiveClock() {
+      function update() {
+        const now = new Date();
+        document.getElementById('live-date').innerText = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      }
+      update();
+      setInterval(update, 1000);
+    }
+
+    function initLocation() {
+      const locText = document.getElementById('location-text');
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+              const data = await res.json();
+              const city = data.address.city || data.address.town || data.address.state_district || "Odisha, India";
+              locText.innerText = city;
+            } catch (err) {
+              locText.innerText = `${latitude.toFixed(2)}°N, ${longitude.toFixed(2)}°E`;
+            }
+          },
+          () => { locText.innerText = "Bhubaneswar, Odisha"; }
+        );
+      } else {
+        locText.innerText = "Bhubaneswar, Odisha";
+      }
+    }
+
+    /* ---------------- 2. MENU NAVIGATION ---------------- */
+    function toggleMenu() {
+      document.getElementById('dropdown-menu').classList.toggle('hidden');
+    }
+
+    function navigate(sectionKey) {
+      toggleMenu();
+      showSection(sectionKey);
+    }
+
+    function showSection(sectionKey) {
+      ['routine', 'academics', 'files', 'photos', 'goals'].forEach(s => {
+        document.getElementById(`sec-${s}`).classList.add('hidden');
+      });
+      document.getElementById(`sec-${sectionKey}`).classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.addEventListener('click', (e) => {
+      const menuBtn = document.getElementById('menu-btn');
+      const menu = document.getElementById('dropdown-menu');
+      if (!menuBtn.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.add('hidden');
+      }
+    });
+
+    /* ---------------- 3. DAILY ROUTINE WITH TIME SLOTS & DAYS ---------------- */
+    let selectedDayFilter = 'All';
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    let routines = JSON.parse(localStorage.getItem('chandan_routines_v2')) || [
+      { id: 1, task: "Morning Exercise & Meditation", day: "Everyday", time: "06:30 AM - 07:30 AM", done: false },
+      { id: 2, task: "Core Study & Revision", day: "Sunday", time: "10:00 AM - 01:00 PM", done: false },
+      { id: 3, task: "Project & Code Practice", day: "Monday", time: "02:00 PM - 04:00 PM", done: false }
+    ];
+
+    let historyLog = JSON.parse(localStorage.getItem('chandan_routine_history_v2')) || {};
+
+    function initRoutineTracker() {
+      const today = new Date();
+      const currentDayName = daysOfWeek[today.getDay()];
+      const todayStr = today.toISOString().slice(0, 10);
+      const lastSavedDay = localStorage.getItem('chandan_last_day_v2');
+
+      document.getElementById('current-day-badge').innerText = `Today: ${currentDayName} (${today.toLocaleDateString()})`;
+
+      // Day-based auto-reset
+      if (lastSavedDay !== todayStr) {
+        if (lastSavedDay && routines.length > 0) {
+          const todaysTasks = routines.filter(r => r.day === 'Everyday' || r.day === currentDayName);
+          const completedCount = todaysTasks.filter(r => r.done).length;
+          const percentage = todaysTasks.length === 0 ? 0 : Math.round((completedCount / todaysTasks.length) * 100);
+          historyLog[lastSavedDay] = percentage;
+          localStorage.setItem('chandan_routine_history_v2', JSON.stringify(historyLog));
+        }
+        routines.forEach(r => r.done = false);
+        localStorage.setItem('chandan_last_day_v2', todayStr);
+        saveRoutines();
+      }
+
+      renderRoutines();
+      updateWeeklyStats();
+    }
+
+    function saveRoutines() {
+      localStorage.setItem('chandan_routines_v2', JSON.stringify(routines));
+    }
+
+    function filterDay(day) {
+      selectedDayFilter = day;
+      document.querySelectorAll('.day-filter-btn').forEach(btn => {
+        btn.className = 'day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition';
+      });
+      const activeBtn = document.getElementById(`day-btn-${day}`);
+      if (activeBtn) activeBtn.className = 'day-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500 text-slate-950 transition';
+      renderRoutines();
+    }
+
+    function renderRoutines() {
+      const container = document.getElementById('routine-list');
+      container.innerHTML = '';
+
+      const currentDayName = daysOfWeek[new Date().getDay()];
+      const filtered = routines.filter(r => {
+        if (selectedDayFilter === 'All') return true;
+        return r.day === selectedDayFilter || r.day === 'Everyday';
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center glass-panel rounded-2xl border border-slate-800 text-slate-500 text-xs font-mono">No tasks scheduled for ${selectedDayFilter}. Add one above!</div>`;
+      } else {
+        filtered.forEach(r => {
+          const div = document.createElement('div');
+          div.className = `glass-panel p-4 rounded-xl border flex items-center justify-between transition ${r.done ? 'border-sky-500/40 bg-sky-950/20' : 'border-slate-800'}`;
+          div.innerHTML = `
+            <div class="flex items-center gap-3 cursor-pointer overflow-hidden" onclick="toggleRoutine(${r.id})">
+              <div class="w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-bold transition shrink-0 ${r.done ? 'bg-sky-500 border-sky-400 text-slate-950' : 'border-slate-700 bg-slate-900'}">
+                ${r.done ? '<i class="fa-solid fa-check"></i>' : ''}
+              </div>
+              <div>
+                <p class="text-sm font-semibold ${r.done ? 'line-through text-slate-500' : 'text-slate-200'}">${r.task}</p>
+                <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
+                  <span class="px-2 py-0.5 bg-slate-900 rounded-md border border-slate-800 text-sky-400 font-semibold">${r.day}</span>
+                  <span><i class="fa-regular fa-clock text-[10px]"></i> ${r.time || 'Flexible'}</span>
+                </div>
+              </div>
+            </div>
+            <button onclick="deleteRoutine(${r.id})" class="text-slate-600 hover:text-rose-400 p-2 text-xs transition">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      updateRoutineStats();
+    }
+
+    function addRoutineItem() {
+      const taskInput = document.getElementById('new-routine-input');
+      const daySelect = document.getElementById('routine-day-select');
+      const timeInput = document.getElementById('routine-time-input');
+
+      const task = taskInput.value.trim();
+      const day = daySelect.value;
+      const time = timeInput.value.trim();
+
+      if (!task) {
+        alert("Please enter a task name.");
+        return;
+      }
+
+      routines.push({ id: Date.now(), task, day, time: time || "Anytime", done: false });
+      taskInput.value = '';
+      timeInput.value = '';
+      saveRoutines();
+      renderRoutines();
+    }
+
+    function toggleRoutine(id) {
+      routines = routines.map(r => r.id === id ? { ...r, done: !r.done } : r);
+      saveRoutines();
+      renderRoutines();
+    }
+
+    function deleteRoutine(id) {
+      routines = routines.filter(r => r.id !== id);
+      saveRoutines();
+      renderRoutines();
+    }
+
+    function updateRoutineStats() {
+      const currentDayName = daysOfWeek[new Date().getDay()];
+      const relevantTasks = routines.filter(r => r.day === 'Everyday' || r.day === currentDayName);
+
+      const total = relevantTasks.length;
+      const completed = relevantTasks.filter(r => r.done).length;
+      const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      document.getElementById('today-percentage').innerText = `${pct}%`;
+      document.getElementById('today-count').innerText = `${completed} of ${total} tasks completed today`;
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      historyLog[todayStr] = pct;
+      localStorage.setItem('chandan_routine_history_v2', JSON.stringify(historyLog));
+      updateWeeklyStats();
+    }
+
+    function updateWeeklyStats() {
+      const keys = Object.keys(historyLog).slice(-7);
+      if (keys.length === 0) {
+        document.getElementById('week-percentage').innerText = '0%';
+        return;
+      }
+      const sum = keys.reduce((acc, k) => acc + historyLog[k], 0);
+      const avg = Math.round(sum / keys.length);
+      document.getElementById('week-percentage').innerText = `${avg}%`;
+    }
+
+    /* ---------------- 4. FILES & DRIVES ---------------- */
+    let mySubCategory = 'cert';
+    let localDriveFiles = JSON.parse(localStorage.getItem('chandan_drive_files_v2')) || {
+      'my-drive': [
+        { name: "Matriculation Certificate.pdf", category: "cert", size: "1.2 MB", date: "May 2015" },
+        { name: "Graduation Degree Keonjhar.pdf", category: "cert", size: "2.4 MB", date: "Jul 2022" },
+        { name: "Official Email Credentials.txt", category: "mail", size: "15 KB", date: "2026" }
+      ],
+      'father-drive': [],
+      'mother-drive': []
+    };
+
+    function switchDriveTab(tabKey) {
+      ['my-drive', 'father-drive', 'mother-drive'].forEach(t => {
+        document.getElementById(`drive-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).className = 'flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-400 hover:bg-slate-800 transition flex items-center justify-center gap-2';
+      });
+      document.getElementById(`drive-${tabKey}`).classList.remove('hidden');
+      document.getElementById(`tab-${tabKey}`).className = 'flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-bold bg-sky-500 text-slate-950 transition flex items-center justify-center gap-2';
+      renderDriveFiles();
+    }
+
+    function switchMySubCategory(cat) {
+      mySubCategory = cat;
+      ['cert', 'mail', 'other'].forEach(c => {
+        const el = document.getElementById(`sub-${c}`);
+        if (c === cat) {
+          el.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30';
+        } else {
+          el.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200';
+        }
+      });
+      renderDriveFiles();
+    }
+
+    function uploadDocument(driveKey) {
+      const title = document.getElementById('doc-title-input').value.trim();
+      const fileInput = document.getElementById('doc-file-input');
+      if (!title && !fileInput.files[0]) {
+        alert("Please choose a file or enter a title.");
+        return;
+      }
+      const filename = fileInput.files[0] ? fileInput.files[0].name : title;
+      const sizeStr = fileInput.files[0] ? (fileInput.files[0].size / 1024 / 1024).toFixed(2) + " MB" : "Custom";
+
+      localDriveFiles['my-drive'].push({
+        name: filename,
+        category: mySubCategory,
+        size: sizeStr,
+        date: new Date().toLocaleDateString()
+      });
+
+      localStorage.setItem('chandan_drive_files_v2', JSON.stringify(localDriveFiles));
+      document.getElementById('doc-title-input').value = '';
+      fileInput.value = '';
+      renderDriveFiles();
+    }
+
+    function uploadFamilyDoc(driveKey) {
+      const isFather = driveKey === 'father-drive';
+      const titleInput = document.getElementById(isFather ? 'father-doc-title' : 'mother-doc-title');
+      const fileInput = document.getElementById(isFather ? 'father-doc-file' : 'mother-doc-file');
+
+      const filename = fileInput.files[0] ? fileInput.files[0].name : titleInput.value.trim();
+      if (!filename) {
+        alert("Please enter a document description or select a file.");
+        return;
+      }
+
+      localDriveFiles[driveKey].push({
+        name: filename,
+        size: fileInput.files[0] ? (fileInput.files[0].size / 1024 / 1024).toFixed(2) + " MB" : "1.0 MB",
+        date: new Date().toLocaleDateString()
+      });
+
+      localStorage.setItem('chandan_drive_files_v2', JSON.stringify(localDriveFiles));
+      titleInput.value = '';
+      fileInput.value = '';
+      renderDriveFiles();
+    }
+
+    function renderDriveFiles() {
+      const myContainer = document.getElementById('my-drive-file-list');
+      myContainer.innerHTML = '';
+      const filtered = localDriveFiles['my-drive'].filter(f => f.category === mySubCategory);
+
+      if (filtered.length === 0) {
+        myContainer.innerHTML = `<div class="col-span-3 text-center py-8 text-slate-500 text-xs font-mono">No documents found.</div>`;
+      } else {
+        filtered.forEach(f => {
+          myContainer.innerHTML += `
+            <div class="glass-panel p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div class="overflow-hidden">
+                <p class="text-sm font-semibold text-slate-200 truncate">${f.name}</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">${f.size} • ${f.date}</p>
+              </div>
+              <button class="p-2 text-sky-400 hover:text-sky-300 text-sm"><i class="fa-solid fa-file-arrow-down"></i></button>
+            </div>
+          `;
+        });
+      }
+
+      ['father-drive', 'mother-drive'].forEach(dk => {
+        const c = document.getElementById(dk === 'father-drive' ? 'father-file-list' : 'mother-file-list');
+        c.innerHTML = '';
+        if (localDriveFiles[dk].length === 0) {
+          c.innerHTML = `<div class="col-span-3 text-center py-8 text-slate-500 text-xs font-mono">No files uploaded yet.</div>`;
+        } else {
+          localDriveFiles[dk].forEach(f => {
+            c.innerHTML += `
+              <div class="glass-panel p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div class="overflow-hidden">
+                  <p class="text-sm font-semibold text-slate-200 truncate">${f.name}</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">${f.size} • ${f.date}</p>
+                </div>
+                <button class="p-2 text-sky-400 hover:text-sky-300 text-sm"><i class="fa-solid fa-file-arrow-down"></i></button>
+              </div>
+            `;
+          });
+        }
+      });
+    }
+
+    /* ---------------- 5. PHOTOS STUDIO ---------------- */
+    let currentPhotoUnit = 'px';
+    let studioImg = null;
+
+    function setPhotoUnit(unit) {
+      currentPhotoUnit = unit;
+      const isPx = unit === 'px';
+      document.getElementById('photo-unit-px').className = isPx ? 'py-2 text-xs font-bold rounded-xl bg-sky-500 text-slate-950' : 'py-2 text-xs font-bold rounded-xl bg-slate-800 text-slate-300';
+      document.getElementById('photo-unit-cm').className = !isPx ? 'py-2 text-xs font-bold rounded-xl bg-sky-500 text-slate-950' : 'py-2 text-xs font-bold rounded-xl bg-slate-800 text-slate-300';
+
+      document.getElementById('photo-lbl-w').innerText = `Width (${unit})`;
+      document.getElementById('photo-lbl-h').innerText = `Height (${unit})`;
+
+      if (unit === 'cm') {
+        document.getElementById('photo-w').value = 3.5;
+        document.getElementById('photo-h').value = 4.5;
+      } else {
+        document.getElementById('photo-w').value = 350;
+        document.getElementById('photo-h').value = 450;
+      }
+      renderPhotoPreview();
+    }
+
+    document.getElementById('photo-studio-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        studioImg = new Image();
+        studioImg.onload = renderPhotoPreview;
+        studioImg.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function getTargetDimensions() {
+      let w = parseFloat(document.getElementById('photo-w').value) || 100;
+      let h = parseFloat(document.getElementById('photo-h').value) || 100;
+      if (currentPhotoUnit === 'cm') {
+        const dpi = 300;
+        w = Math.round((w / 2.54) * dpi);
+        h = Math.round((h / 2.54) * dpi);
+      }
+      return { w, h };
+    }
+
+    function renderPhotoPreview() {
+      if (!studioImg) return;
+      const canvas = document.getElementById('photo-canvas');
+      const ctx = canvas.getContext('2d');
+      const { w, h } = getTargetDimensions();
+      const shape = document.getElementById('photo-shape').value;
+
+      canvas.width = w;
+      canvas.height = h;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.save();
+      if (shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+      } else if (shape === 'rounded') {
+        const r = 24;
+        ctx.beginPath();
+        ctx.moveTo(r, 0);
+        ctx.lineTo(w - r, 0);
+        ctx.quadraticCurveTo(w, 0, w, r);
+        ctx.lineTo(w, h - r);
+        ctx.quadraticCurveTo(w, h, w - r, h);
+        ctx.lineTo(r, h);
+        ctx.quadraticCurveTo(0, h, 0, h - r);
+        ctx.lineTo(0, r);
+        ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.closePath();
+        ctx.clip();
+      }
+
+      ctx.drawImage(studioImg, 0, 0, w, h);
+      ctx.restore();
+    }
+
+    function downloadCustomPhoto() {
+      if (!studioImg) {
+        alert("Please upload a photo first!");
+        return;
+      }
+      const canvas = document.getElementById('photo-canvas');
+      const format = document.getElementById('photo-format').value;
+
+      if (format === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const doc = new jsPDF({
+          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+        doc.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+        doc.save('chandan-photo-export.pdf');
+      } else {
+        const link = document.createElement('a');
+        link.download = `chandan-photo.${format}`;
+        link.href = canvas.toDataURL(`image/${format}`, 0.95);
+        link.click();
+      }
+    }
+  </script>
+</body>
+</html>
